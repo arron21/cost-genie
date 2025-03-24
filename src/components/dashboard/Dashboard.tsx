@@ -29,7 +29,8 @@ interface CostAnalysis {
   };
 }
 
-function calculateCost(amount: number, yearlySalary: number): CostAnalysis {
+// Update the function to optionally use afterTaxIncome
+function calculateCost(amount: number, yearlySalary: number, afterTaxIncome?: number): CostAnalysis {
   // Calculate costs for different frequencies
   const oneTimeAmount = amount;
   const weeklyAmount = amount * 52;  // 52 weeks in a year
@@ -37,12 +38,15 @@ function calculateCost(amount: number, yearlySalary: number): CostAnalysis {
   const everyFourMonthsAmount = amount * 3; // 3 times per year (every 4 months)
   const yearlyAmount = monthlyAmount; // Same as monthly amount * 12
 
-  // Calculate percentages of yearly salary
-  const oneTimePercentage = (oneTimeAmount / yearlySalary) * 100;
-  const weeklyPercentage = (weeklyAmount / yearlySalary) * 100;
-  const monthlyPercentage = (monthlyAmount / yearlySalary) * 100;
-  const everyFourMonthsPercentage = (everyFourMonthsAmount / yearlySalary) * 100;
-  const yearlyPercentage = (yearlyAmount / yearlySalary) * 100;
+  // Use after-tax income for percentage calculations when available
+  const incomeForPercentage = typeof afterTaxIncome === 'number' ? afterTaxIncome : yearlySalary;
+
+  // Calculate percentages of income
+  const oneTimePercentage = (oneTimeAmount / incomeForPercentage) * 100;
+  const weeklyPercentage = (weeklyAmount / incomeForPercentage) * 100;
+  const monthlyPercentage = (monthlyAmount / incomeForPercentage) * 100;
+  const everyFourMonthsPercentage = (everyFourMonthsAmount / incomeForPercentage) * 100;
+  const yearlyPercentage = (yearlyAmount / incomeForPercentage) * 100;
 
   return {
     oneTime: {
@@ -206,7 +210,8 @@ export default function Dashboard() {
 
     try {
       const numAmount = Number(amount);
-      const analysis = calculateCost(numAmount, userProfile.yearlySalary);
+      // Pass after-tax income to calculateCost
+      const analysis = calculateCost(numAmount, userProfile.yearlySalary, afterTaxIncome);
       setCostAnalysis(analysis);
 
       await addCostEntry({
@@ -290,68 +295,75 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-6">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-6">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="bg-white rounded-lg shadow px-5 py-6 sm:px-6">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow px-5 py-6 sm:px-6">
           {error && (
-            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
+            <div className="bg-red-100 dark:bg-red-900 border border-red-400 dark:border-red-700 text-red-700 dark:text-red-200 px-4 py-3 rounded relative mb-4" role="alert">
               <span className="block sm:inline">{error}</span>
             </div>
           )}
           <div className="mb-8">
-            <h2 className="text-2xl font-bold mb-2">Your Profile</h2>
-            <p className="text-gray-600">
+            <h2 className="text-2xl font-bold mb-2 dark:text-white">Your Profile</h2>
+            <p className="text-gray-600 dark:text-gray-300">
               Yearly Salary: ${userProfile.yearlySalary.toLocaleString()}
             </p>
             {afterTaxIncome !== undefined && (
-              <p className="text-gray-600">
+              <p className="text-gray-600 dark:text-gray-300">
                 After-Tax ${afterTaxIncome.toLocaleString()}
               </p>
             )}
             {userProfile.state && (
-              <p className="text-gray-600">
+              <p className="text-gray-600 dark:text-gray-300">
                 State: {userProfile.state}
               </p>
             )}
           </div>
 
           <div className="mb-8">
-            <h2 className="text-2xl font-bold mb-4">Calculate Cost Impact</h2>
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <h2 className="text-2xl font-bold mb-4 dark:text-white">Calculate Cost Impact</h2>
+            <form onSubmit={handleSubmit} className="space-y-6 bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Description
                 </label>
                 <input
                   type="text"
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                  placeholder="What are you spending money on?"
+                  className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 dark:bg-gray-700 dark:text-white sm:text-sm transition-colors duration-200"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Amount
                 </label>
-                <input
-                  type="number"
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                  required
-                />
+                <div className="mt-1 relative rounded-md shadow-sm">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <span className="text-gray-500 dark:text-gray-400 sm:text-sm">$</span>
+                  </div>
+                  <input
+                    type="number"
+                    value={amount}
+                    onChange={(e) => setAmount(e.target.value)}
+                    placeholder="0.00"
+                    className="pl-7 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 dark:bg-gray-700 dark:text-white sm:text-sm transition-colors duration-200"
+                    required
+                  />
+                </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Frequency
                 </label>
                 <select
                   value={frequency}
                   onChange={(e) => setFrequency(e.target.value as CostEntry['frequency'])}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                  className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 dark:bg-gray-700 dark:text-white sm:text-sm transition-colors duration-200"
                 >
                   <option value="once">One-time</option>
                   <option value="daily">Daily</option>
@@ -361,45 +373,55 @@ export default function Dashboard() {
                 </select>
               </div>
 
-              <div className="flex items-center">
-                <input
-                  type="checkbox"
-                  id="favorite"
-                  checked={favorite}
-                  onChange={(e) => setFavorite(e.target.checked)}
-                  className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-                />
-                <label htmlFor="favorite" className="ml-2 block text-sm text-gray-700">
-                  Mark as favorite
-                </label>
-              </div>
-
+              <div className="space-y-3 mt-3 pt-4 border-t border-gray-200 dark:border-gray-700">
                 <div className="flex items-center">
-                <input
-                  type="checkbox"
-                  id="need"
-                  checked={need}
-                  onChange={(e) => setNeed(e.target.checked)}
-                  className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-                />
-                <label htmlFor="need" className="ml-2 block text-sm text-gray-700">
-                  Mark as essential need
-                </label>
+                  <div className="bg-gray-100 dark:bg-gray-600 p-1 rounded">
+                    <input
+                      type="checkbox"
+                      id="favorite"
+                      checked={favorite}
+                      onChange={(e) => setFavorite(e.target.checked)}
+                      className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 rounded dark:bg-gray-700 dark:border-transparent transition-colors duration-200"
+                    />
+                  </div>
+                  <label htmlFor="favorite" className="ml-3 block text-sm text-gray-700 dark:text-gray-300">
+                    Mark as favorite
+                  </label>
                 </div>
 
+                <div className="flex items-center">
+                  <div className="bg-gray-100 dark:bg-gray-600 p-1 rounded">
+                    <input
+                      type="checkbox"
+                      id="need"
+                      checked={need}
+                      onChange={(e) => setNeed(e.target.checked)}
+                      className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 rounded dark:bg-gray-700 dark:border-transparent transition-colors duration-200"
+                    />
+                  </div>
+                  <label htmlFor="need" className="ml-3 block text-sm text-gray-700 dark:text-gray-300">
+                    Mark as essential need
+                  </label>
+                </div>
+              </div>
               
-              <button
-                type="submit"
-                className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-              >
-                Calculate Impact
-              </button>
+              <div className="pt-2">
+                <button
+                  type="submit"
+                  className="w-full inline-flex justify-center items-center py-2.5 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-gray-800 transition-colors duration-200"
+                >
+                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                  </svg>
+                  Calculate Impact
+                </button>
+              </div>
             </form>
           </div>
 
           {userProfile && needsCount + favoritesCount > 0 && (
-            <div className="bg-white rounded-lg shadow px-5 py-6 mb-6">
-              <h2 className="text-xl font-bold mb-4">Quick Financial Tips</h2>
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md dark:shadow-gray-900/30 px-5 py-6 mb-6 border border-gray-100 dark:border-gray-700">
+              <h2 className="text-xl font-bold mb-4 dark:text-white">Quick Financial Tips</h2>
               {getRecommendationsData() && (
                 <FinancialRecommendations 
                   financialData={getRecommendationsData()!} 
@@ -409,7 +431,7 @@ export default function Dashboard() {
               )}
               
               <div className="mt-4 text-right">
-                <Link to="/summary" className="text-indigo-600 hover:text-indigo-800 text-sm font-medium">
+                <Link to="/summary" className="text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300 text-sm font-medium">
                   View full financial summary →
                 </Link>
               </div>
@@ -418,42 +440,45 @@ export default function Dashboard() {
 
           {costAnalysis && (
             <div className="mt-8">
-              <h3 className="text-xl font-bold mb-4">Cost Analysis</h3>
-              <div className="bg-gray-50 p-4 rounded-lg">
+              <h3 className="text-xl font-bold mb-4 dark:text-white">Cost Analysis</h3>
+              <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">
+                  Percentages are calculated based on your {afterTaxIncome !== undefined ? 'after-tax' : 'gross'} income.
+                </p>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   <div>
-                    <p className="text-sm text-gray-500">One-time Cost</p>
-                    <p className="text-lg font-semibold">
+                    <p className="text-sm text-gray-500 dark:text-gray-400">One-time Cost</p>
+                    <p className="text-lg font-semibold dark:text-white">
                       ${costAnalysis.oneTime.amount.toFixed(2)}
-                      <span className="text-sm text-gray-600 ml-2">
-                        ({costAnalysis.oneTime.percentage.toFixed(1)}% of yearly income)
+                      <span className="text-sm text-gray-600 dark:text-gray-400 ml-2">
+                        ({costAnalysis.oneTime.percentage.toFixed(3)}% of yearly income)
                       </span>
                     </p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-500">Weekly Cost (yearly)</p>
-                    <p className="text-lg font-semibold">
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Weekly Cost (yearly)</p>
+                    <p className="text-lg font-semibold dark:text-white">
                       ${costAnalysis.weekly.amount.toFixed(2)}
-                      <span className="text-sm text-gray-600 ml-2">
-                        ({costAnalysis.weekly.percentage.toFixed(1)}% of yearly income)
+                      <span className="text-sm text-gray-600 dark:text-gray-400 ml-2">
+                        ({costAnalysis.weekly.percentage.toFixed(3)}% of yearly income)
                       </span>
                     </p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-500">Monthly Cost (yearly)</p>
-                    <p className="text-lg font-semibold">
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Monthly Cost (yearly)</p>
+                    <p className="text-lg font-semibold dark:text-white">
                       ${costAnalysis.monthly.amount.toFixed(2)}
-                      <span className="text-sm text-gray-600 ml-2">
-                        ({costAnalysis.monthly.percentage.toFixed(1)}% of yearly income)
+                      <span className="text-sm text-gray-600 dark:text-gray-400 ml-2">
+                        ({costAnalysis.monthly.percentage.toFixed(3)}% of yearly income)
                       </span>
                     </p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-500">Every 4 Months Cost (yearly)</p>
-                    <p className="text-lg font-semibold">
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Every 4 Months Cost (yearly)</p>
+                    <p className="text-lg font-semibold dark:text-white">
                       ${costAnalysis.everyFourMonths.amount.toFixed(2)}
-                      <span className="text-sm text-gray-600 ml-2">
-                        ({costAnalysis.everyFourMonths.percentage.toFixed(1)}% of yearly income)
+                      <span className="text-sm text-gray-600 dark:text-gray-400 ml-2">
+                        ({costAnalysis.everyFourMonths.percentage.toFixed(3)}% of yearly income)
                       </span>
                     </p>
                   </div>

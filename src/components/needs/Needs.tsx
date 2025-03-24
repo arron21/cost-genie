@@ -41,7 +41,8 @@ interface CostAnalysis {
   };
 }
 
-function calculateCost(amount: number, yearlySalary: number): CostAnalysis {
+// Update the function to optionally use afterTaxIncome parameter
+function calculateCost(amount: number, yearlySalary: number, afterTaxIncome?: number): CostAnalysis {
   // Calculate costs for different frequencies
   const oneTimeAmount = amount;
   const weeklyAmount = amount * 52;  // 52 weeks in a year
@@ -49,12 +50,15 @@ function calculateCost(amount: number, yearlySalary: number): CostAnalysis {
   const everyFourMonthsAmount = amount * 3; // 3 times per year (every 4 months)
   const yearlyAmount = monthlyAmount; // Same as monthly amount * 12
 
-  // Calculate percentages of yearly salary
-  const oneTimePercentage = (oneTimeAmount / yearlySalary) * 100;
-  const weeklyPercentage = (weeklyAmount / yearlySalary) * 100;
-  const monthlyPercentage = (monthlyAmount / yearlySalary) * 100;
-  const everyFourMonthsPercentage = (everyFourMonthsAmount / yearlySalary) * 100;
-  const yearlyPercentage = (yearlyAmount / yearlySalary) * 100;
+  // Use after-tax income for percentage calculations when available
+  const incomeForPercentage = typeof afterTaxIncome === 'number' ? afterTaxIncome : yearlySalary;
+
+  // Calculate percentages of income
+  const oneTimePercentage = (oneTimeAmount / incomeForPercentage) * 100;
+  const weeklyPercentage = (weeklyAmount / incomeForPercentage) * 100;
+  const monthlyPercentage = (monthlyAmount / incomeForPercentage) * 100;
+  const everyFourMonthsPercentage = (everyFourMonthsAmount / incomeForPercentage) * 100;
+  const yearlyPercentage = (yearlyAmount / incomeForPercentage) * 100;
 
   return {
     oneTime: {
@@ -232,31 +236,39 @@ const Needs: React.FC = () => {
 
   return (
     <div className="container mx-auto px-4 py-6">
-      <h1 className="text-2xl font-bold mb-6">Essential Needs</h1>
+      <h1 className="text-2xl font-bold mb-6 dark:text-white">Essential Needs</h1>
+      
+      {afterTaxIncome !== null && (
+        <div className="mb-4 text-sm bg-blue-50 dark:bg-blue-900 p-2 rounded border-l-2 border-blue-300 dark:border-blue-700">
+          <p className="text-gray-700 dark:text-gray-200">
+            Note: Percentages are calculated based on your after-tax income of <strong>${afterTaxIncome.toLocaleString()}</strong>.
+          </p>
+        </div>
+      )}
       
       {needs.length > 0 && userProfile && (
-        <div className="bg-white rounded-lg shadow p-5 mb-6 border-l-4 border-indigo-500">
-          <h2 className="text-lg font-semibold text-gray-800 mb-3">Essential Costs Summary</h2>
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-5 mb-6 border-l-4 border-indigo-500">
+          <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-3">Essential Costs Summary</h2>
           <div className="flex flex-col md:flex-row md:items-end gap-4">
             <div>
-              <p className="text-sm text-gray-500">Total Yearly Essentials</p>
-              <p className="text-xl font-bold text-indigo-700">${totalYearlyCost.toFixed(2)}</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Total Yearly Essentials</p>
+              <p className="text-xl font-bold text-indigo-700 dark:text-indigo-400">${totalYearlyCost.toFixed(2)}</p>
             </div>
             <div>
-              <p className="text-sm text-gray-500">Monthly Average</p>
-              <p className="text-xl font-bold text-indigo-700">${(totalYearlyCost / 12).toFixed(2)}</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Monthly Average</p>
+              <p className="text-xl font-bold text-indigo-700 dark:text-indigo-400">${(totalYearlyCost / 12).toFixed(2)}</p>
             </div>
             {afterTaxIncome !== null && (
               <div>
-                <p className="text-sm text-gray-500">After-Tax Income</p>
-                <p className="text-xl font-bold text-indigo-700">${afterTaxIncome.toLocaleString()}</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">After-Tax Income</p>
+                <p className="text-xl font-bold text-indigo-700 dark:text-indigo-400">${afterTaxIncome.toLocaleString()}</p>
               </div>
             )}
             <div className="md:ml-auto">
-              <p className="text-sm text-gray-500">Percentage of Income</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Percentage of Income</p>
               <div className="flex items-center">
-                <p className="text-xl font-bold text-indigo-700">{salaryPercentage.toFixed(1)}%</p>
-                <div className="ml-2 h-4 w-24 bg-gray-200 rounded-full overflow-hidden">
+                <p className="text-xl font-bold text-indigo-700 dark:text-indigo-400">{salaryPercentage.toFixed(3)}%</p>
+                <div className="ml-2 h-4 w-24 bg-gray-200 dark:bg-gray-600 rounded-full overflow-hidden">
                   <div 
                     className={`h-full rounded-full ${salaryPercentage > 50 ? 'bg-red-500' : salaryPercentage > 30 ? 'bg-yellow-500' : 'bg-green-500'}`} 
                     style={{ width: `${Math.min(100, salaryPercentage)}%` }}
@@ -266,7 +278,7 @@ const Needs: React.FC = () => {
             </div>
           </div>
           {salaryPercentage > 50 && (
-            <p className="mt-3 text-sm text-red-600">
+            <p className="mt-3 text-sm text-red-600 dark:text-red-400">
               <svg className="inline-block w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
               </svg>
@@ -278,10 +290,10 @@ const Needs: React.FC = () => {
       
       {needs.length === 0 ? (
         <div className="text-center mt-8">
-          <p className="text-gray-500 mb-4">No essential needs yet</p>
+          <p className="text-gray-500 dark:text-gray-400 mb-4">No essential needs yet</p>
           <Link 
             to="/history" 
-            className="text-indigo-600 hover:text-indigo-800 underline"
+            className="text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300 underline"
           >
             Go to history to mark items as essential needs
           </Link>
@@ -289,14 +301,14 @@ const Needs: React.FC = () => {
       ) : (
         <div className="space-y-4">
           {needs.map((cost) => {
-            const costAnalysis = userProfile ? calculateCost(cost.amount, userProfile.yearlySalary) : null;
+            const costAnalysis = userProfile ? calculateCost(cost.amount, userProfile.yearlySalary, afterTaxIncome) : null;
             const isExpanded = expandedCostId === cost.id;
             const isDeleting = deleteInProgress === cost.id;
             
             return (
               <div
                 key={cost.id}
-                className={`bg-white rounded-lg shadow p-4 border-l-4 border-indigo-400 ${isDeleting ? 'opacity-50' : ''}`}
+                className={`bg-white dark:bg-gray-800 rounded-lg shadow p-4 border-l-4 border-indigo-400 ${isDeleting ? 'opacity-50' : ''}`}
               >
                 <div className="flex items-center justify-between cursor-pointer" onClick={() => toggleExpand(cost.id)}>
                   <div className="flex items-center">
@@ -308,13 +320,13 @@ const Needs: React.FC = () => {
                       className="mr-1 focus:outline-none"
                       disabled={isDeleting}
                     >
-                      <svg className="w-5 h-5 text-indigo-500" fill="currentColor" viewBox="0 0 20 20">
+                      <svg className="w-5 h-5 text-indigo-500 dark:text-indigo-400" fill="currentColor" viewBox="0 0 20 20">
                         <path d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" />
                       </svg>
                     </button>
                     <button
                       onClick={(e) => handleDelete(cost.id, e)}
-                      className="mr-2 focus:outline-none text-gray-400 hover:text-red-500"
+                      className="mr-2 focus:outline-none text-gray-400 dark:text-gray-500 hover:text-red-500 dark:hover:text-red-400"
                       disabled={isDeleting}
                       aria-label="Delete"
                     >
@@ -323,8 +335,8 @@ const Needs: React.FC = () => {
                       </svg>
                     </button>
                     <div>
-                      <h3 className="font-medium">{cost.description}</h3>
-                      <div className="flex items-center text-sm text-gray-500 mt-1">
+                      <h3 className="font-medium dark:text-white">{cost.description}</h3>
+                      <div className="flex items-center text-sm text-gray-500 dark:text-gray-400 mt-1">
                         <span>{cost.frequency}</span>
                         <span className="mx-2">•</span>
                         <span>{cost.date.toLocaleDateString()}</span>
@@ -332,11 +344,11 @@ const Needs: React.FC = () => {
                     </div>
                   </div>
                   <div className="flex items-center">
-                    <span className="text-green-600 font-medium mr-2">
+                    <span className="text-green-600 dark:text-green-400 font-medium mr-2">
                       ${cost.amount.toFixed(2)}
                     </span>
                     <svg 
-                      className={`w-5 h-5 text-gray-400 transform transition-transform ${isExpanded ? 'rotate-180' : ''}`} 
+                      className={`w-5 h-5 text-gray-400 dark:text-gray-500 transform transition-transform ${isExpanded ? 'rotate-180' : ''}`} 
                       fill="none" 
                       stroke="currentColor" 
                       viewBox="0 0 24 24"
@@ -347,43 +359,48 @@ const Needs: React.FC = () => {
                 </div>
                 
                 {isExpanded && costAnalysis && (
-                  <div className="mt-4 pt-4 border-t border-gray-100">
-                    <h4 className="text-sm font-semibold text-gray-700 mb-2">Cost Analysis</h4>
-                    <div className="bg-gray-50 p-3 rounded-lg">
+                  <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
+                    <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                      Cost Analysis
+                      <span className="text-xs font-normal text-gray-500 dark:text-gray-400 ml-2">
+                        (% of {afterTaxIncome !== null ? 'after-tax' : 'gross'} income)
+                      </span>
+                    </h4>
+                    <div className="bg-gray-50 dark:bg-gray-700 p-3 rounded-lg">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                         <div>
-                          <p className="text-xs text-gray-500">One-time Cost</p>
-                          <p className="text-sm font-semibold">
+                          <p className="text-xs text-gray-500 dark:text-gray-400">One-time Cost</p>
+                          <p className="text-sm font-semibold dark:text-white">
                             ${costAnalysis.oneTime.amount.toFixed(2)}
-                            <span className="text-xs text-gray-600 ml-1">
-                              ({costAnalysis.oneTime.percentage.toFixed(1)}% of yearly income)
+                            <span className="text-xs text-gray-600 dark:text-gray-400 ml-1">
+                              ({costAnalysis.oneTime.percentage.toFixed(3)}% of yearly income)
                             </span>
                           </p>
                         </div>
                         <div>
-                          <p className="text-xs text-gray-500">Weekly Cost (yearly)</p>
-                          <p className="text-sm font-semibold">
+                          <p className="text-xs text-gray-500 dark:text-gray-400">Weekly Cost (yearly)</p>
+                          <p className="text-sm font-semibold dark:text-white">
                             ${costAnalysis.weekly.amount.toFixed(2)}
-                            <span className="text-xs text-gray-600 ml-1">
-                              ({costAnalysis.weekly.percentage.toFixed(1)}% of yearly income)
+                            <span className="text-xs text-gray-600 dark:text-gray-400 ml-1">
+                              ({costAnalysis.weekly.percentage.toFixed(3)}% of yearly income)
                             </span>
                           </p>
                         </div>
                         <div>
-                          <p className="text-xs text-gray-500">Monthly Cost (yearly)</p>
-                          <p className="text-sm font-semibold">
+                          <p className="text-xs text-gray-500 dark:text-gray-400">Monthly Cost (yearly)</p>
+                          <p className="text-sm font-semibold dark:text-white">
                             ${costAnalysis.monthly.amount.toFixed(2)}
-                            <span className="text-xs text-gray-600 ml-1">
-                              ({costAnalysis.monthly.percentage.toFixed(1)}% of yearly income)
+                            <span className="text-xs text-gray-600 dark:text-gray-400 ml-1">
+                              ({costAnalysis.monthly.percentage.toFixed(3)}% of yearly income)
                             </span>
                           </p>
                         </div>
                         <div>
-                          <p className="text-xs text-gray-500">Every 4 Months Cost (yearly)</p>
-                          <p className="text-sm font-semibold">
+                          <p className="text-xs text-gray-500 dark:text-gray-400">Every 4 Months Cost (yearly)</p>
+                          <p className="text-sm font-semibold dark:text-white">
                             ${costAnalysis.everyFourMonths.amount.toFixed(2)}
-                            <span className="text-xs text-gray-600 ml-1">
-                              ({costAnalysis.everyFourMonths.percentage.toFixed(1)}% of yearly income)
+                            <span className="text-xs text-gray-600 dark:text-gray-400 ml-1">
+                              ({costAnalysis.everyFourMonths.percentage.toFixed(3)}% of yearly income)
                             </span>
                           </p>
                         </div>

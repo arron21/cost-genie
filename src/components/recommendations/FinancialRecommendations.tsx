@@ -230,7 +230,7 @@ const FinancialRecommendations: React.FC<FinancialRecommendationsProps> = ({
         {recommendations.map((rec) => (
           <div key={rec.id} className="flex items-start">
             <div className="mt-0.5 mr-2">{getIcon(rec.type)}</div>
-            <p className="text-sm text-gray-700">{rec.description}</p>
+            <p className="text-sm text-gray-700 dark:text-gray-300">{rec.description}</p>
           </div>
         ))}
       </div>
@@ -240,7 +240,7 @@ const FinancialRecommendations: React.FC<FinancialRecommendationsProps> = ({
   // Render full version
   return (
     <div className="space-y-4">
-      <h2 className="text-lg font-semibold text-gray-800">Financial Recommendations</h2>
+      <h2 className="text-lg font-semibold text-gray-800 dark:text-white">Financial Recommendations</h2>
       
       {recommendations.map((rec) => (
         <div 
@@ -253,12 +253,12 @@ const FinancialRecommendations: React.FC<FinancialRecommendationsProps> = ({
             </div>
             <div className="ml-3">
               <h3 className={`text-sm font-medium ${getTitleColor(rec.type)}`}>{rec.title}</h3>
-              <div className="mt-2 text-sm text-gray-700">
+              <div className="mt-2 text-sm text-gray-700 dark:text-gray-300">
                 <p>{rec.description}</p>
               </div>
               {rec.action && (
                 <div className="mt-2">
-                  <p className="text-sm font-medium text-gray-700">
+                  <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
                     <span className="font-semibold">Suggestion:</span> {rec.action}
                   </p>
                 </div>

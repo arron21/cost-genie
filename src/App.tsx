@@ -25,7 +25,7 @@ function App() {
   return (
     <Router>
       <AuthProvider>
-        <div className="min-h-screen bg-gray-50">
+        <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
           <main className="pb-20"> {/* Add padding bottom to prevent overlap with nav */}
             <Routes>
               <Route path="/login" element={<Login />} />

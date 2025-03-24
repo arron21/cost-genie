@@ -4,13 +4,14 @@ import { getStateNames, calculateAfterTaxIncome } from '../history/taxMap';
 import { useAuth } from '../auth/AuthContext';
 import { getUserProfile, updateUserProfile, UserProfile } from '../../firebase';
 import { auth } from '../../firebase'; // Import Firebase auth directly
+import { getTheme, setTheme } from '../../utils/themeUtils';
 
 const Settings: React.FC = () => {
   const { currentUser, logout } = useAuth();
   const navigate = useNavigate();
   const [settings, setSettings] = useState({
     defaultState: '',
-    theme: 'light',
+    theme: getTheme(), // Initialize with current theme
     showTaxDetails: true,
     saveHistory: true
   });
@@ -69,6 +70,12 @@ const Settings: React.FC = () => {
   const handleSettingsChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
     const checked = (e.target as HTMLInputElement).checked;
+    
+    // If theme is changing, apply it immediately
+    if (name === 'theme') {
+      setTheme(value as 'light' | 'dark' | 'system');
+    }
+    
     setSettings({
       ...settings,
       [name]: type === 'checkbox' ? checked : value
@@ -205,7 +212,7 @@ const Settings: React.FC = () => {
             <div className="mt-4 p-3 bg-gray-50 rounded-md text-gray-800 dark:bg-gray-800 dark:text-gray-200">
               <p className="text-sm">
                 <span className="font-medium">State Tax Impact:</span> You pay approximately ${taxSavings.toLocaleString()} 
-                in state taxes ({taxPercentage.toFixed(1)}% of your income)
+                 in taxes ({taxPercentage.toFixed(3)}% of your income)
               </p>
               <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                 *Estimate based on state income tax only. Federal taxes and other deductions not included.

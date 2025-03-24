@@ -41,7 +41,8 @@ interface CostAnalysis {
   };
 }
 
-function calculateCost(amount: number, yearlySalary: number): CostAnalysis {
+// Update the function to optionally use afterTaxIncome parameter
+function calculateCost(amount: number, yearlySalary: number, afterTaxIncome?: number): CostAnalysis {
   // Calculate costs for different frequencies
   const oneTimeAmount = amount;
   const weeklyAmount = amount * 52;  // 52 weeks in a year
@@ -49,12 +50,15 @@ function calculateCost(amount: number, yearlySalary: number): CostAnalysis {
   const everyFourMonthsAmount = amount * 3; // 3 times per year (every 4 months)
   const yearlyAmount = monthlyAmount; // Same as monthly amount * 12
 
-  // Calculate percentages of yearly salary
-  const oneTimePercentage = (oneTimeAmount / yearlySalary) * 100;
-  const weeklyPercentage = (weeklyAmount / yearlySalary) * 100;
-  const monthlyPercentage = (monthlyAmount / yearlySalary) * 100;
-  const everyFourMonthsPercentage = (everyFourMonthsAmount / yearlySalary) * 100;
-  const yearlyPercentage = (yearlyAmount / yearlySalary) * 100;
+  // Use after-tax income for percentage calculations when available
+  const incomeForPercentage = typeof afterTaxIncome === 'number' ? afterTaxIncome : yearlySalary;
+
+  // Calculate percentages of income
+  const oneTimePercentage = (oneTimeAmount / incomeForPercentage) * 100;
+  const weeklyPercentage = (weeklyAmount / incomeForPercentage) * 100;
+  const monthlyPercentage = (monthlyAmount / incomeForPercentage) * 100;
+  const everyFourMonthsPercentage = (everyFourMonthsAmount / incomeForPercentage) * 100;
+  const yearlyPercentage = (yearlyAmount / incomeForPercentage) * 100;
 
   return {
     oneTime: {
@@ -234,6 +238,14 @@ const MustHaves: React.FC = () => {
     <div className="container mx-auto px-4 py-6">
       <h1 className="text-2xl font-bold mb-6">Must-Have Items</h1>
       
+      {afterTaxIncome !== null && (
+        <div className="mb-4 text-sm bg-blue-50 p-2 rounded border-l-2 border-blue-300">
+          <p className="text-gray-700">
+            Note: Percentages are calculated based on your after-tax income of <strong>${afterTaxIncome.toLocaleString()}</strong>.
+          </p>
+        </div>
+      )}
+      
       {mustHaves.length > 0 && userProfile && (
         <div className="bg-white rounded-lg shadow p-5 mb-6 border-l-4 border-indigo-500">
           <h2 className="text-lg font-semibold text-gray-800 mb-3">Essential Costs Summary</h2>
@@ -255,7 +267,7 @@ const MustHaves: React.FC = () => {
             <div className="md:ml-auto">
               <p className="text-sm text-gray-500">Percentage of Income</p>
               <div className="flex items-center">
-                <p className="text-xl font-bold text-indigo-700">{salaryPercentage.toFixed(1)}%</p>
+                <p className="text-xl font-bold text-indigo-700">{salaryPercentage.toFixed(3)}%</p>
                 <div className="ml-2 h-4 w-24 bg-gray-200 rounded-full overflow-hidden">
                   <div 
                     className={`h-full rounded-full ${salaryPercentage > 50 ? 'bg-red-500' : salaryPercentage > 30 ? 'bg-yellow-500' : 'bg-green-500'}`} 
@@ -289,7 +301,7 @@ const MustHaves: React.FC = () => {
       ) : (
         <div className="space-y-4">
           {mustHaves.map((cost) => {
-            const costAnalysis = userProfile ? calculateCost(cost.amount, userProfile.yearlySalary) : null;
+            const costAnalysis = userProfile ? calculateCost(cost.amount, userProfile.yearlySalary, afterTaxIncome) : null;
             const isExpanded = expandedCostId === cost.id;
             const isDeleting = deleteInProgress === cost.id;
             
@@ -348,7 +360,12 @@ const MustHaves: React.FC = () => {
                 
                 {isExpanded && costAnalysis && (
                   <div className="mt-4 pt-4 border-t border-gray-100">
-                    <h4 className="text-sm font-semibold text-gray-700 mb-2">Cost Analysis</h4>
+                    <h4 className="text-sm font-semibold text-gray-700 mb-2">
+                      Cost Analysis
+                      <span className="text-xs font-normal text-gray-500 ml-2">
+                        (% of {afterTaxIncome !== null ? 'after-tax' : 'gross'} income)
+                      </span>
+                    </h4>
                     <div className="bg-gray-50 p-3 rounded-lg">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                         <div>
@@ -356,7 +373,7 @@ const MustHaves: React.FC = () => {
                           <p className="text-sm font-semibold">
                             ${costAnalysis.oneTime.amount.toFixed(2)}
                             <span className="text-xs text-gray-600 ml-1">
-                              ({costAnalysis.oneTime.percentage.toFixed(1)}% of yearly income)
+                              ({costAnalysis.oneTime.percentage.toFixed(3)}% of yearly income)
                             </span>
                           </p>
                         </div>
@@ -365,7 +382,7 @@ const MustHaves: React.FC = () => {
                           <p className="text-sm font-semibold">
                             ${costAnalysis.weekly.amount.toFixed(2)}
                             <span className="text-xs text-gray-600 ml-1">
-                              ({costAnalysis.weekly.percentage.toFixed(1)}% of yearly income)
+                              ({costAnalysis.weekly.percentage.toFixed(3)}% of yearly income)
                             </span>
                           </p>
                         </div>
@@ -374,7 +391,7 @@ const MustHaves: React.FC = () => {
                           <p className="text-sm font-semibold">
                             ${costAnalysis.monthly.amount.toFixed(2)}
                             <span className="text-xs text-gray-600 ml-1">
-                              ({costAnalysis.monthly.percentage.toFixed(1)}% of yearly income)
+                              ({costAnalysis.monthly.percentage.toFixed(3)}% of yearly income)
                             </span>
                           </p>
                         </div>
@@ -383,7 +400,7 @@ const MustHaves: React.FC = () => {
                           <p className="text-sm font-semibold">
                             ${costAnalysis.everyFourMonths.amount.toFixed(2)}
                             <span className="text-xs text-gray-600 ml-1">
-                              ({costAnalysis.everyFourMonths.percentage.toFixed(1)}% of yearly income)
+                              ({costAnalysis.everyFourMonths.percentage.toFixed(3)}% of yearly income)
                             </span>
                           </p>
                         </div>

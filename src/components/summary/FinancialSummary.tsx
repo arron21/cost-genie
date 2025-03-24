@@ -60,9 +60,12 @@ const FinancialSummary: React.FC = () => {
         setUserProfile(profile);
         
         // Calculate after-tax income if state is available
+        let afterTaxValue = undefined;
         if (profile && profile.state) {
           const afterTax = calculateAfterTaxIncome(profile.state, profile.yearlySalary);
-          setAfterTaxIncome(afterTax || undefined);
+          // Store the after-tax income (could be null)
+          afterTaxValue = afterTax !== null ? afterTax : undefined;
+          setAfterTaxIncome(afterTaxValue);
         }
         
         // Fetch favorites
@@ -98,17 +101,16 @@ const FinancialSummary: React.FC = () => {
           date: doc.data().createdAt.toDate()
         })) as CostRecord[];
         
-        // Calculate yearly costs for favorites
+        // Calculate yearly costs for favorites and needs
         const favoritesYearlyTotal = calculateYearlyCost(favorites);
-        
-        // Calculate yearly costs for needs
         const needsYearlyTotal = calculateYearlyCost(needs);
-        
-        // Calculate combined total
         const combinedYearlyTotal = favoritesYearlyTotal + needsYearlyTotal;
         
-        // Calculate percentages based on after-tax income or gross income
-        const incomeForPercentage = afterTaxIncome || (profile ? profile.yearlySalary : 1);
+        // Use after-tax income for percentage calculations when available
+        // Similar to how it's done in the Needs component
+        const incomeForPercentage = afterTaxValue !== undefined 
+          ? afterTaxValue 
+          : (profile ? profile.yearlySalary : 1);
         
         const summary: FinancialSummaryData = {
           favorites: {
@@ -165,6 +167,7 @@ const FinancialSummary: React.FC = () => {
   const getFinancialDataForRecommendations = () => {
     if (!financialData || !userProfile) return null;
     
+    const { favorites, needs, combined } = financialData;
     
     return {
       income: {
@@ -229,26 +232,30 @@ const FinancialSummary: React.FC = () => {
       
       {/* User Income Info */}
       {userProfile && (
-        <div className="bg-white rounded-lg shadow p-5 mb-6">
-          <h2 className="text-lg font-semibold mb-3">Income Overview</h2>
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-5 mb-6">
+          <h2 className="text-lg font-semibold mb-3 dark:text-gray-200">Income Overview</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <p className="text-sm text-gray-500">Yearly Salary</p>
-              <p className="text-xl font-bold">${userProfile.yearlySalary.toLocaleString()}</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Yearly Salary (Gross)</p>
+              <p className="text-xl font-bold dark:text-white">${userProfile.yearlySalary.toLocaleString()}</p>
             </div>
             {afterTaxIncome !== undefined && (
               <div>
-                <p className="text-sm text-gray-500">After-Tax Income (Est.)</p>
-                <p className="text-xl font-bold">${afterTaxIncome.toLocaleString()}</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">After-Tax Income (Est.)</p>
+                <p className="text-xl font-bold dark:text-white">${afterTaxIncome.toLocaleString()}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Used for percentage calculations</p>
               </div>
             )}
             <div>
-              <p className="text-sm text-gray-500">Monthly Income</p>
-              <p className="text-xl font-bold">
+              <p className="text-sm text-gray-500 dark:text-gray-400">Monthly Income</p>
+              <p className="text-xl font-bold dark:text-white">
                 ${(afterTaxIncome !== undefined ? afterTaxIncome / 12 : userProfile.yearlySalary / 12).toLocaleString(undefined, {
                   minimumFractionDigits: 2,
                   maximumFractionDigits: 2
                 })}
+              </p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                {afterTaxIncome !== undefined ? '(After-tax)' : '(Gross)'}
               </p>
             </div>
           </div>
@@ -257,7 +264,12 @@ const FinancialSummary: React.FC = () => {
       
       {/* Combined Summary Card */}
       <div className="bg-gradient-to-r from-purple-500 to-indigo-600 rounded-lg shadow p-5 mb-6 text-white">
-        <h2 className="text-lg font-semibold mb-3">Total Financial Commitments</h2>
+        <h2 className="text-lg font-semibold mb-3">
+          Total Financial Commitments
+          {afterTaxIncome !== undefined && (
+            <span className="text-sm font-normal ml-2">(% of after-tax income)</span>
+          )}
+        </h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
             <p className="text-sm opacity-80">Yearly Total</p>
@@ -276,7 +288,7 @@ const FinancialSummary: React.FC = () => {
           <div>
             <p className="text-sm opacity-80">Percentage of Income</p>
             <div className="flex items-center">
-              <p className="text-2xl font-bold">{combined.percentageOfIncome.toFixed(1)}%</p>
+              <p className="text-2xl font-bold">{combined.percentageOfIncome.toFixed(3)}%</p>
               <div className="ml-2 h-4 w-24 bg-white/30 rounded-full overflow-hidden">
                 <div 
                   className={`h-full rounded-full ${
@@ -306,35 +318,37 @@ const FinancialSummary: React.FC = () => {
       {/* Categories Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
         {/* Favorites Summary */}
-        <div className="bg-white rounded-lg shadow p-5 border-l-4 border-yellow-400">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-5 border-l-4 border-yellow-400">
           <div className="flex justify-between items-center mb-3">
-            <h2 className="text-lg font-semibold">Favorites</h2>
-            <Link to="/favorites" className="text-sm text-indigo-600 hover:text-indigo-800">
+            <h2 className="text-lg font-semibold dark:text-gray-200">Favorites</h2>
+            <Link to="/favorites" className="text-sm text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300">
               View all
             </Link>
           </div>
           
           <div>
-            <p className="text-sm text-gray-500">Yearly Total</p>
-            <p className="text-xl font-bold text-gray-800">${favorites.yearlyTotal.toLocaleString(undefined, {
+            <p className="text-sm text-gray-500 dark:text-gray-400">Yearly Total</p>
+            <p className="text-xl font-bold text-gray-800 dark:text-white">${favorites.yearlyTotal.toLocaleString(undefined, {
               minimumFractionDigits: 2,
               maximumFractionDigits: 2
             })}</p>
           </div>
           
           <div className="mt-3">
-            <p className="text-sm text-gray-500">Monthly Average</p>
-            <p className="text-xl font-bold text-gray-800">${favorites.monthlyAverage.toLocaleString(undefined, {
+            <p className="text-sm text-gray-500 dark:text-gray-400">Monthly Average</p>
+            <p className="text-xl font-bold text-gray-800 dark:text-white">${favorites.monthlyAverage.toLocaleString(undefined, {
               minimumFractionDigits: 2,
               maximumFractionDigits: 2
             })}</p>
           </div>
           
           <div className="mt-3">
-            <p className="text-sm text-gray-500">Percentage of Income</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              Percentage of {afterTaxIncome !== undefined ? 'After-Tax' : 'Gross'} Income
+            </p>
             <div className="flex items-center">
-              <p className="text-xl font-bold text-gray-800">{favorites.percentageOfIncome.toFixed(1)}%</p>
-              <div className="ml-2 h-3 w-24 bg-gray-200 rounded-full overflow-hidden">
+              <p className="text-xl font-bold text-gray-800 dark:text-white">{favorites.percentageOfIncome.toFixed(3)}%</p>
+              <div className="ml-2 h-3 w-24 bg-gray-200 dark:bg-gray-600 rounded-full overflow-hidden">
                 <div 
                   className="h-full rounded-full bg-yellow-500" 
                   style={{ width: `${Math.min(100, favorites.percentageOfIncome)}%` }}
@@ -343,41 +357,43 @@ const FinancialSummary: React.FC = () => {
             </div>
           </div>
           
-          <div className="mt-4 border-t border-gray-100 pt-4">
-            <p className="text-sm text-gray-500">{favorites.items.length} favorite items</p>
+          <div className="mt-4 border-t border-gray-100 dark:border-gray-700 pt-4">
+            <p className="text-sm text-gray-500 dark:text-gray-400">{favorites.items.length} favorite items</p>
           </div>
         </div>
         
         {/* Needs Summary */}
-        <div className="bg-white rounded-lg shadow p-5 border-r-4 border-indigo-400">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-5 border-r-4 border-indigo-400">
           <div className="flex justify-between items-center mb-3">
-            <h2 className="text-lg font-semibold">Essential Needs</h2>
-            <Link to="/needs" className="text-sm text-indigo-600 hover:text-indigo-800">
+            <h2 className="text-lg font-semibold dark:text-gray-200">Essential Needs</h2>
+            <Link to="/needs" className="text-sm text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300">
               View all
             </Link>
           </div>
           
           <div>
-            <p className="text-sm text-gray-500">Yearly Total</p>
-            <p className="text-xl font-bold text-gray-800">${needs.yearlyTotal.toLocaleString(undefined, {
+            <p className="text-sm text-gray-500 dark:text-gray-400">Yearly Total</p>
+            <p className="text-xl font-bold text-gray-800 dark:text-white">${needs.yearlyTotal.toLocaleString(undefined, {
               minimumFractionDigits: 2,
               maximumFractionDigits: 2
             })}</p>
           </div>
           
           <div className="mt-3">
-            <p className="text-sm text-gray-500">Monthly Average</p>
-            <p className="text-xl font-bold text-gray-800">${needs.monthlyAverage.toLocaleString(undefined, {
+            <p className="text-sm text-gray-500 dark:text-gray-400">Monthly Average</p>
+            <p className="text-xl font-bold text-gray-800 dark:text-white">${needs.monthlyAverage.toLocaleString(undefined, {
               minimumFractionDigits: 2,
               maximumFractionDigits: 2
             })}</p>
           </div>
           
           <div className="mt-3">
-            <p className="text-sm text-gray-500">Percentage of Income</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              Percentage of {afterTaxIncome !== undefined ? 'After-Tax' : 'Gross'} Income
+            </p>
             <div className="flex items-center">
-              <p className="text-xl font-bold text-gray-800">{needs.percentageOfIncome.toFixed(1)}%</p>
-              <div className="ml-2 h-3 w-24 bg-gray-200 rounded-full overflow-hidden">
+              <p className="text-xl font-bold text-gray-800 dark:text-white">{needs.percentageOfIncome.toFixed(3)}%</p>
+              <div className="ml-2 h-3 w-24 bg-gray-200 dark:bg-gray-600 rounded-full overflow-hidden">
                 <div 
                   className={`h-full rounded-full ${
                     needs.percentageOfIncome > 50 ? 'bg-red-500' : 
@@ -390,15 +406,15 @@ const FinancialSummary: React.FC = () => {
             </div>
           </div>
           
-          <div className="mt-4 border-t border-gray-100 pt-4">
-            <p className="text-sm text-gray-500">{needs.items.length} essential items</p>
+          <div className="mt-4 border-t border-gray-100 dark:border-gray-700 pt-4">
+            <p className="text-sm text-gray-500 dark:text-gray-400">{needs.items.length} essential items</p>
           </div>
         </div>
       </div>
       
       {/* Recommendations */}
       {recommendationsData && (
-        <div className="bg-white rounded-lg shadow p-5">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-5">
           <FinancialRecommendations financialData={{
             income: {
               yearly: recommendationsData.income.yearly,
