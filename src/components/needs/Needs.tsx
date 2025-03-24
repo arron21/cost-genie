@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
-import { collection, query, where, orderBy, getDocs, doc, updateDoc } from 'firebase/firestore';
-import { db, toggleCostFavorite, deleteCostEntry, toggleCostNeed } from '../../firebase';
+import React, { useState, useEffect } from 'react';
+import { collection, query, where, orderBy, getDocs } from 'firebase/firestore';
+import { db, deleteCostEntry, toggleCostNeed } from '../../firebase';
 import { useAuth } from '../auth/AuthContext';
 import { getUserProfile, UserProfile } from '../../firebase';
 import { Link } from 'react-router-dom';
@@ -80,7 +80,7 @@ function calculateCost(amount: number, yearlySalary: number): CostAnalysis {
   };
 }
 
-const Needs = () => {
+const Needs: React.FC = () => {
   const [needs, setNeeds] = useState<CostRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
@@ -185,7 +185,7 @@ const Needs = () => {
     }
   };
   
-  const handleDelete = async (costId: string, e: React.MouseEvent) => {
+  const handleDelete = async (costId: string, e: React.MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation(); // Prevent expanding the item when clicking delete
     
     if (!currentUser || deleteInProgress) return;
@@ -301,7 +301,7 @@ const Needs = () => {
                 <div className="flex items-center justify-between cursor-pointer" onClick={() => toggleExpand(cost.id)}>
                   <div className="flex items-center">
                     <button
-                      onClick={(e) => {
+                      onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
                         e.stopPropagation();
                         toggleNeed(cost.id, cost.need);
                       }}

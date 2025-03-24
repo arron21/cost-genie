@@ -46,7 +46,7 @@ const FinancialRecommendations: React.FC<FinancialRecommendationsProps> = ({
 }) => {
   // Generate recommendations based on financial data
   const generateRecommendations = (): Recommendation[] => {
-    const { income, spending } = financialData;
+    const { spending } = financialData;
     const recommendations: Recommendation[] = [];
     
     // Analyze overall financial health

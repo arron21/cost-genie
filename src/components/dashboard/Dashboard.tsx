@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
-import { getUserProfile, UserProfile, CostEntry, addCostEntry } from '../../firebase';
+import { getUserProfile, UserProfile, CostEntry, addCostEntry, db } from '../../firebase';
 import { calculateAfterTaxIncome } from '../history/taxMap';
-import CostHistory from './CostHistory';
+import { query, collection, where, getDocs, DocumentData } from 'firebase/firestore';
 import FinancialRecommendations from '../recommendations/FinancialRecommendations';
 
 interface CostAnalysis {
@@ -78,7 +78,7 @@ export default function Dashboard() {
   const [costAnalysis, setCostAnalysis] = useState<CostAnalysis | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [afterTaxIncome, setAfterTaxIncome] = useState<number | null>(null);
+  const [afterTaxIncome, setAfterTaxIncome] = useState<number | undefined>(undefined);
   const [favorite, setFavorite] = useState(false);
   const [need, setNeed] = useState(false);
   const [needsTotal, setNeedsTotal] = useState(0);
@@ -117,7 +117,8 @@ export default function Dashboard() {
         if (profile && profile.state) {
           const afterTax = calculateAfterTaxIncome(profile.state, profile.yearlySalary);
           console.log(afterTax)
-          setAfterTaxIncome(afterTax);
+          // Ensure the afterTax value is a number or explicitly set to undefined if not
+          setAfterTaxIncome(typeof afterTax === 'number' ? afterTax : undefined);
         }
       } catch (error) {
         setError('Unable to load your profile. Please check your internet connection.');
@@ -154,19 +155,19 @@ export default function Dashboard() {
           getDocs(favoritesQuery)
         ]);
         
-        const needsList = needsSnapshot.docs.map(doc => ({
+        const needsList = needsSnapshot.docs.map((doc: DocumentData) => ({
           ...doc.data(),
           id: doc.id
         }));
         
-        const favoritesList = favoritesSnapshot.docs.map(doc => ({
+        const favoritesList = favoritesSnapshot.docs.map((doc: DocumentData) => ({
           ...doc.data(),
           id: doc.id
         }));
         
         // Calculate totals
-        const calcYearlyTotal = (items) => {
-          return items.reduce((total, item) => {
+        const calcYearlyTotal = (items: any[]) => {
+          return items.reduce((total: number, item: any) => {
             const amount = Number(item.amount);
             switch(item.frequency) {
               case 'daily': return total + (amount * 365);
@@ -188,7 +189,7 @@ export default function Dashboard() {
         setFavoritesCount(favoritesList.length);
         
         // Calculate percentage of income
-        const income = afterTaxIncome || userProfile.yearlySalary;
+        const income = typeof afterTaxIncome === 'number' ? afterTaxIncome : userProfile.yearlySalary;
         setCombinedPercentage((combinedTotal / income) * 100);
         
       } catch (error) {
@@ -232,17 +233,42 @@ export default function Dashboard() {
     return <div className="text-center py-8">Profile not found. Please complete your profile setup.</div>;
   }
 
+  // Define FinancialData interface
+  interface FinancialData {
+    income: {
+      yearly: number;
+      monthly: number;
+      afterTax?: number;
+    };
+    spending: {
+      needs: {
+        total: number;
+        percentage: number;
+        count: number;
+      };
+      favorites: {
+        total: number;
+        percentage: number;
+        count: number;
+      };
+      combined: {
+        total: number;
+        percentage: number;
+      };
+    };
+  }
+
   // Get financial data for recommendations
-  const getRecommendationsData = () => {
+  const getRecommendationsData = (): FinancialData | null => {
     if (!userProfile) return null;
     
-    const income = afterTaxIncome || userProfile.yearlySalary;
+    const income = typeof afterTaxIncome === 'number' ? afterTaxIncome : userProfile.yearlySalary;
     
     return {
       income: {
         yearly: userProfile.yearlySalary,
         monthly: userProfile.yearlySalary / 12,
-        afterTax: afterTaxIncome
+        afterTax: afterTaxIncome || undefined
       },
       spending: {
         needs: {
@@ -277,7 +303,7 @@ export default function Dashboard() {
             <p className="text-gray-600">
               Yearly Salary: ${userProfile.yearlySalary.toLocaleString()}
             </p>
-            {afterTaxIncome !== null && (
+            {afterTaxIncome !== undefined && (
               <p className="text-gray-600">
                 After-Tax ${afterTaxIncome.toLocaleString()}
               </p>
@@ -374,11 +400,13 @@ export default function Dashboard() {
           {userProfile && needsCount + favoritesCount > 0 && (
             <div className="bg-white rounded-lg shadow px-5 py-6 mb-6">
               <h2 className="text-xl font-bold mb-4">Quick Financial Tips</h2>
-              <FinancialRecommendations 
-                financialData={getRecommendationsData()} 
-                compact={true}
-                maxRecommendations={3}
-              />
+              {getRecommendationsData() && (
+                <FinancialRecommendations 
+                  financialData={getRecommendationsData()!} 
+                  compact={true}
+                  maxRecommendations={3}
+                />
+              )}
               
               <div className="mt-4 text-right">
                 <Link to="/summary" className="text-indigo-600 hover:text-indigo-800 text-sm font-medium">

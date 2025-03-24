@@ -5,7 +5,7 @@ import { useAuth } from '../auth/AuthContext';
 import { getUserProfile, updateUserProfile, UserProfile } from '../../firebase';
 import { auth } from '../../firebase'; // Import Firebase auth directly
 
-const Settings = () => {
+const Settings: React.FC = () => {
   const { currentUser, logout } = useAuth();
   const navigate = useNavigate();
   const [settings, setSettings] = useState({
@@ -66,19 +66,20 @@ const Settings = () => {
     }
   }, [selectedState, userProfile]);
 
-  const handleSettingsChange = (e) => {
-    const { name, value, type, checked } = e.target;
+  const handleSettingsChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value, type } = e.target;
+    const checked = (e.target as HTMLInputElement).checked;
     setSettings({
       ...settings,
       [name]: type === 'checkbox' ? checked : value
     });
   };
   
-  const handleStateChange = (e) => {
+  const handleStateChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setSelectedState(e.target.value);
   };
 
-  const handleSettingsSubmit = (e) => {
+  const handleSettingsSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     // Save to localStorage
     localStorage.setItem('costGenieSettings', JSON.stringify(settings));
@@ -86,7 +87,7 @@ const Settings = () => {
     setTimeout(() => setSaveSuccess(false), 3000);
   };
   
-  const handleProfileSubmit = async (e) => {
+  const handleProfileSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!currentUser || !userProfile) return;
     
@@ -231,7 +232,7 @@ const Settings = () => {
               className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white"
             >
               <option value="">Select a state</option>
-              {states.map(state => (
+              {states.map((state: string) => (
                 <option key={state} value={state}>{state}</option>
               ))}
             </select>
@@ -262,7 +263,7 @@ const Settings = () => {
               className="p-2 border border-gray-300 rounded w-64 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300"
             >
               <option value="">Select a default state</option>
-              {states.map(state => (
+              {states.map((state: string) => (
                 <option key={state} value={state}>{state}</option>
               ))}
             </select>

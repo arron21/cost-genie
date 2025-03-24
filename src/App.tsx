@@ -7,7 +7,6 @@ import BottomNav from './components/BottomNav';
 import History from './components/history/History';
 import Settings from './components/settings/Settings';
 import Favorites from './components/favorites/Favorites';
-import MustHaves from './components/musthaves/MustHaves';
 import Needs from './components/needs/Needs';
 import FinancialSummary from './components/summary/FinancialSummary';
 

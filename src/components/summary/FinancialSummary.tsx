@@ -5,6 +5,7 @@ import { useAuth } from '../auth/AuthContext';
 import { getUserProfile, UserProfile } from '../../firebase';
 import { Link } from 'react-router-dom';
 import { calculateAfterTaxIncome } from '../history/taxMap';
+import React from 'react';
 import FinancialRecommendations from '../recommendations/FinancialRecommendations';
 
 interface CostRecord {
@@ -38,12 +39,12 @@ interface FinancialSummaryData {
   };
 }
 
-const FinancialSummary = () => {
+const FinancialSummary: React.FC = () => {
   const [financialData, setFinancialData] = useState<FinancialSummaryData | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [afterTaxIncome, setAfterTaxIncome] = useState<number | null>(null);
+  const [afterTaxIncome, setAfterTaxIncome] = useState<number | undefined>(undefined);
   const { currentUser } = useAuth();
 
   useEffect(() => {
@@ -61,7 +62,7 @@ const FinancialSummary = () => {
         // Calculate after-tax income if state is available
         if (profile && profile.state) {
           const afterTax = calculateAfterTaxIncome(profile.state, profile.yearlySalary);
-          setAfterTaxIncome(afterTax);
+          setAfterTaxIncome(afterTax || undefined);
         }
         
         // Fetch favorites
@@ -164,8 +165,6 @@ const FinancialSummary = () => {
   const getFinancialDataForRecommendations = () => {
     if (!financialData || !userProfile) return null;
     
-    const { favorites, needs, combined } = financialData;
-    const incomeValue = afterTaxIncome || userProfile.yearlySalary;
     
     return {
       income: {
@@ -222,6 +221,8 @@ const FinancialSummary = () => {
   const { favorites, needs, combined } = financialData;
   const recommendationsData = getFinancialDataForRecommendations();
   
+  // Ensure recommendationsData matches FinancialData interface when used
+  
   return (
     <div className="container mx-auto px-4 py-6">
       <h1 className="text-2xl font-bold mb-6">Financial Summary</h1>
@@ -235,7 +236,7 @@ const FinancialSummary = () => {
               <p className="text-sm text-gray-500">Yearly Salary</p>
               <p className="text-xl font-bold">${userProfile.yearlySalary.toLocaleString()}</p>
             </div>
-            {afterTaxIncome !== null && (
+            {afterTaxIncome !== undefined && (
               <div>
                 <p className="text-sm text-gray-500">After-Tax Income (Est.)</p>
                 <p className="text-xl font-bold">${afterTaxIncome.toLocaleString()}</p>
@@ -244,7 +245,7 @@ const FinancialSummary = () => {
             <div>
               <p className="text-sm text-gray-500">Monthly Income</p>
               <p className="text-xl font-bold">
-                ${(afterTaxIncome !== null ? afterTaxIncome / 12 : userProfile.yearlySalary / 12).toLocaleString(undefined, {
+                ${(afterTaxIncome !== undefined ? afterTaxIncome / 12 : userProfile.yearlySalary / 12).toLocaleString(undefined, {
                   minimumFractionDigits: 2,
                   maximumFractionDigits: 2
                 })}
@@ -398,7 +399,29 @@ const FinancialSummary = () => {
       {/* Recommendations */}
       {recommendationsData && (
         <div className="bg-white rounded-lg shadow p-5">
-          <FinancialRecommendations financialData={recommendationsData} />
+          <FinancialRecommendations financialData={{
+            income: {
+              yearly: recommendationsData.income.yearly,
+              monthly: recommendationsData.income.monthly,
+              afterTax: recommendationsData.income.afterTax
+            },
+            spending: {
+              needs: {
+                total: recommendationsData.spending.needs.total,
+                percentage: recommendationsData.spending.needs.percentage,
+                count: recommendationsData.spending.needs.count
+              },
+              favorites: {
+                total: recommendationsData.spending.favorites.total,
+                percentage: recommendationsData.spending.favorites.percentage,
+                count: recommendationsData.spending.favorites.count
+              },
+              combined: {
+                total: recommendationsData.spending.combined.total,
+                percentage: recommendationsData.spending.combined.percentage
+              }
+            }
+          }} />
         </div>
       )}
     </div>

@@ -7,6 +7,7 @@ interface AuthContextType {
   loading: boolean;
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
+  logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -42,7 +43,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     currentUser,
     loading,
     signInWithGoogle,
-    signOut
+    signOut,
+    logout: signOut
   };
 
   return (
