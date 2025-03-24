@@ -182,14 +182,14 @@ const FinancialRecommendations: React.FC<FinancialRecommendationsProps> = ({
   const getBackgroundColor = (type: Recommendation['type']) => {
     switch (type) {
       case 'success':
-        return 'bg-green-50';
+        return 'bg-green-50 dark:bg-green-900/20';
       case 'warning':
-        return 'bg-orange-50';
+        return 'bg-orange-50 dark:bg-orange-900/20';
       case 'danger':
-        return 'bg-red-50';
+        return 'bg-red-50 dark:bg-red-900/20';
       case 'info':
       default:
-        return 'bg-blue-50';
+        return 'bg-blue-50 dark:bg-blue-900/20';
     }
   };
   
@@ -197,14 +197,14 @@ const FinancialRecommendations: React.FC<FinancialRecommendationsProps> = ({
   const getBorderColor = (type: Recommendation['type']) => {
     switch (type) {
       case 'success':
-        return 'border-green-400';
+        return 'border-green-400 dark:border-green-700';
       case 'warning':
-        return 'border-orange-400';
+        return 'border-orange-400 dark:border-orange-700';
       case 'danger':
-        return 'border-red-400';
+        return 'border-red-400 dark:border-red-700';
       case 'info':
       default:
-        return 'border-blue-400';
+        return 'border-blue-400 dark:border-blue-700';
     }
   };
   
@@ -212,14 +212,14 @@ const FinancialRecommendations: React.FC<FinancialRecommendationsProps> = ({
   const getTitleColor = (type: Recommendation['type']) => {
     switch (type) {
       case 'success':
-        return 'text-green-800';
+        return 'text-green-800 dark:text-green-300';
       case 'warning':
-        return 'text-orange-800';
+        return 'text-orange-800 dark:text-orange-300';
       case 'danger':
-        return 'text-red-800';
+        return 'text-red-800 dark:text-red-300';
       case 'info':
       default:
-        return 'text-blue-800';
+        return 'text-blue-800 dark:text-blue-300';
     }
   };
   

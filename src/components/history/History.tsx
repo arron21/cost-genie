@@ -91,7 +91,7 @@ const History = () => {
   const [deleteInProgress, setDeleteInProgress] = useState<string | null>(null);
   const [editingFrequencyId, setEditingFrequencyId] = useState<string | null>(null);
   const [selectedFrequency, setSelectedFrequency] = useState<string>('');
-  const [afterTaxIncome, setAfterTaxIncome] = useState<number | null>(null);
+  const [afterTaxIncome, setAfterTaxIncome] = useState<number | undefined>(undefined);
   const { currentUser } = useAuth();
 
   useEffect(() => {
@@ -108,7 +108,7 @@ const History = () => {
         // Calculate after-tax income if state is available
         if (profile && profile.state) {
           const afterTax = calculateAfterTaxIncome(profile.state, profile.yearlySalary);
-          setAfterTaxIncome(afterTax);
+          setAfterTaxIncome(afterTax ?? undefined);
         }
         
         const costsRef = collection(db, 'costs');
@@ -259,7 +259,7 @@ const History = () => {
     <div className="container mx-auto px-4 py-6">
       <h1 className="text-2xl font-bold mb-6 dark:text-white">Cost History</h1>
       
-      {afterTaxIncome && (
+      {afterTaxIncome !== undefined && (
         <div className="mb-4 text-sm text-gray-600 dark:text-gray-300 bg-blue-50 dark:bg-blue-900 p-2 rounded">
           Percentages are calculated using your after-tax income of ${afterTaxIncome.toLocaleString()} 
           when available.
@@ -400,7 +400,7 @@ const History = () => {
                     <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                       Cost Analysis 
                       <span className="text-xs font-normal text-gray-500 dark:text-gray-400 ml-2">
-                        (% of {afterTaxIncome ? 'after-tax' : 'gross'} income)
+                        (% of {afterTaxIncome !== undefined ? 'after-tax' : 'gross'} income)
                       </span>
                     </h4>
                     <div className="bg-gray-50 dark:bg-gray-700 p-3 rounded-lg">

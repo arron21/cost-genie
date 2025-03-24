@@ -92,7 +92,7 @@ const Favorites = () => {
   const { currentUser } = useAuth();
   const [totalYearlyCost, setTotalYearlyCost] = useState<number>(0);
   const [salaryPercentage, setSalaryPercentage] = useState<number>(0);
-  const [afterTaxIncome, setAfterTaxIncome] = useState<number | null>(null);
+  const [afterTaxIncome, setAfterTaxIncome] = useState<number | undefined>(undefined);
 
   useEffect(() => {
     const fetchFavorites = async () => {
@@ -108,7 +108,7 @@ const Favorites = () => {
         // Calculate after-tax income if state is available
         if (profile && profile.state) {
           const afterTax = calculateAfterTaxIncome(profile.state, profile.yearlySalary);
-          setAfterTaxIncome(afterTax);
+          setAfterTaxIncome(afterTax ?? undefined);
         }
         
         const costsRef = collection(db, 'costs');
@@ -164,7 +164,7 @@ const Favorites = () => {
       });
       
       setTotalYearlyCost(total);
-      if (afterTaxIncome !== null) {
+      if (afterTaxIncome !== undefined) {
         setSalaryPercentage((total / afterTaxIncome) * 100);
       } else {
         setSalaryPercentage((total / userProfile.yearlySalary) * 100);
@@ -237,7 +237,7 @@ const Favorites = () => {
     <div className="container mx-auto px-4 py-6">
       <h1 className="text-2xl font-bold mb-6">Favorites</h1>
       
-      {afterTaxIncome !== null && (
+      {afterTaxIncome !== undefined && (
         <div className="mb-4 text-sm bg-blue-50 dark:bg-blue-900 p-2 rounded border-l-2 border-blue-300 dark:border-blue-700">
           <p className="text-gray-700 dark:text-gray-200">
             Note: Percentages are calculated based on your after-tax income of <strong>${afterTaxIncome.toLocaleString()}</strong>.
@@ -257,7 +257,7 @@ const Favorites = () => {
               <p className="text-sm text-gray-500">Monthly Average</p>
               <p className="text-xl font-bold text-blue-700">${(totalYearlyCost / 12).toFixed(2)}</p>
             </div>
-            {afterTaxIncome !== null && (
+            {afterTaxIncome !== undefined && (
               <div>
                 <p className="text-sm text-gray-500">After-Tax Income (State)</p>
                 <p className="text-xl font-bold text-blue-700">${afterTaxIncome.toLocaleString()}</p>
@@ -362,7 +362,7 @@ const Favorites = () => {
                     <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                       Cost Analysis 
                       <span className="text-xs font-normal text-gray-500 dark:text-gray-400 ml-2">
-                        (% of {afterTaxIncome !== null ? 'after-tax' : 'gross'} income)
+                        (% of {afterTaxIncome !== undefined ? 'after-tax' : 'gross'} income)
                       </span>
                     </h4>
                     <div className="bg-gray-50 dark:bg-gray-700 p-3 rounded-lg">
