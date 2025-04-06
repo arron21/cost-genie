@@ -5,6 +5,8 @@ import { getUserProfile, UserProfile, CostEntry, addCostEntry, db } from '../../
 import { calculateAfterTaxIncome } from '../history/taxMap';
 import { query, collection, where, getDocs, DocumentData } from 'firebase/firestore';
 import FinancialRecommendations from '../recommendations/FinancialRecommendations';
+import CostAnalysisDisplay from '../history/CostAnalysisDisplay';
+import { calculateCost } from '../../utils/costUtils';
 
 interface CostAnalysis {
   oneTime: {
@@ -26,49 +28,6 @@ interface CostAnalysis {
   yearly: {
     amount: number;
     percentage: number;
-  };
-}
-
-// Update the function to optionally use afterTaxIncome
-function calculateCost(amount: number, yearlySalary: number, afterTaxIncome?: number): CostAnalysis {
-  // Calculate costs for different frequencies
-  const oneTimeAmount = amount;
-  const weeklyAmount = amount * 52;  // 52 weeks in a year
-  const monthlyAmount = amount * 12; // 12 months in a year
-  const everyFourMonthsAmount = amount * 3; // 3 times per year (every 4 months)
-  const yearlyAmount = monthlyAmount; // Same as monthly amount * 12
-
-  // Use after-tax income for percentage calculations when available
-  const incomeForPercentage = typeof afterTaxIncome === 'number' ? afterTaxIncome : yearlySalary;
-
-  // Calculate percentages of income
-  const oneTimePercentage = (oneTimeAmount / incomeForPercentage) * 100;
-  const weeklyPercentage = (weeklyAmount / incomeForPercentage) * 100;
-  const monthlyPercentage = (monthlyAmount / incomeForPercentage) * 100;
-  const everyFourMonthsPercentage = (everyFourMonthsAmount / incomeForPercentage) * 100;
-  const yearlyPercentage = (yearlyAmount / incomeForPercentage) * 100;
-
-  return {
-    oneTime: {
-      amount: oneTimeAmount,
-      percentage: oneTimePercentage
-    },
-    weekly: {
-      amount: weeklyAmount,
-      percentage: weeklyPercentage
-    },
-    monthly: {
-      amount: monthlyAmount,
-      percentage: monthlyPercentage
-    },
-    everyFourMonths: {
-      amount: everyFourMonthsAmount,
-      percentage: everyFourMonthsPercentage
-    },
-    yearly: {
-      amount: yearlyAmount,
-      percentage: yearlyPercentage
-    }
   };
 }
 
@@ -116,12 +75,8 @@ export default function Dashboard() {
         setUserProfile(profile);
         setError(null);
 
-        console.log(profile)
-        console.log( profile.state)
         if (profile && profile.state) {
           const afterTax = calculateAfterTaxIncome(profile.state, profile.yearlySalary);
-          console.log(afterTax)
-          // Ensure the afterTax value is a number or explicitly set to undefined if not
           setAfterTaxIncome(typeof afterTax === 'number' ? afterTax : undefined);
         }
       } catch (error) {
@@ -303,22 +258,7 @@ export default function Dashboard() {
               <span className="block sm:inline">{error}</span>
             </div>
           )}
-          <div className="mb-8">
-            <h2 className="text-2xl font-bold mb-2 dark:text-white">Your Profile</h2>
-            <p className="text-gray-600 dark:text-gray-300">
-              Yearly Salary: ${userProfile.yearlySalary.toLocaleString()}
-            </p>
-            {afterTaxIncome !== undefined && (
-              <p className="text-gray-600 dark:text-gray-300">
-                After-Tax ${afterTaxIncome.toLocaleString()}
-              </p>
-            )}
-            {userProfile.state && (
-              <p className="text-gray-600 dark:text-gray-300">
-                State: {userProfile.state}
-              </p>
-            )}
-          </div>
+
 
           <div className="mb-8">
             <h2 className="text-2xl font-bold mb-4 dark:text-white">Calculate Cost Impact</h2>
@@ -332,7 +272,7 @@ export default function Dashboard() {
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="What are you spending money on?"
-                  className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 dark:bg-gray-700 dark:text-white sm:text-sm transition-colors duration-200"
+                  className="mt-1 p-2 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 dark:bg-gray-700 dark:text-white sm:text-sm transition-colors duration-200"
                   required
                 />
               </div>
@@ -350,7 +290,7 @@ export default function Dashboard() {
                     value={amount}
                     onChange={(e) => setAmount(e.target.value)}
                     placeholder="0.00"
-                    className="pl-7 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 dark:bg-gray-700 dark:text-white sm:text-sm transition-colors duration-200"
+                    className="pl-7 p-2 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 dark:bg-gray-700 dark:text-white sm:text-sm transition-colors duration-200"
                     required
                   />
                 </div>
@@ -363,7 +303,7 @@ export default function Dashboard() {
                 <select
                   value={frequency}
                   onChange={(e) => setFrequency(e.target.value as CostEntry['frequency'])}
-                  className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 dark:bg-gray-700 dark:text-white sm:text-sm transition-colors duration-200"
+                  className="mt-1 block p-2 w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 dark:bg-gray-700 dark:text-white sm:text-sm transition-colors duration-200"
                 >
                   <option value="once">One-time</option>
                   <option value="daily">Daily</option>
@@ -374,33 +314,45 @@ export default function Dashboard() {
               </div>
 
               <div className="space-y-3 mt-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+
+                
                 <div className="flex items-center">
-                  <div className="bg-gray-100 dark:bg-gray-600 p-1 rounded">
+                  <div className=" p-1 rounded">
                     <input
-                      type="checkbox"
+                      type="radio"
                       id="favorite"
+                      name="preference"
+                      value="favorite"
                       checked={favorite}
-                      onChange={(e) => setFavorite(e.target.checked)}
+                      onChange={() => {
+                        setFavorite(true);
+                        setNeed(false);
+                      }}
                       className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 rounded dark:bg-gray-700 dark:border-transparent transition-colors duration-200"
                     />
                   </div>
                   <label htmlFor="favorite" className="ml-3 block text-sm text-gray-700 dark:text-gray-300">
-                    Mark as favorite
+                    Mark as Want
                   </label>
                 </div>
 
                 <div className="flex items-center">
-                  <div className="bg-gray-100 dark:bg-gray-600 p-1 rounded">
+                  <div className="p-1 rounded">
                     <input
-                      type="checkbox"
+                      type="radio"
                       id="need"
+                      name="preference"
+                      value="need"
                       checked={need}
-                      onChange={(e) => setNeed(e.target.checked)}
+                      onChange={() => {
+                        setFavorite(false);
+                        setNeed(true);
+                      }}
                       className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 rounded dark:bg-gray-700 dark:border-transparent transition-colors duration-200"
                     />
                   </div>
                   <label htmlFor="need" className="ml-3 block text-sm text-gray-700 dark:text-gray-300">
-                    Mark as essential need
+                    Mark as Need
                   </label>
                 </div>
               </div>
@@ -445,44 +397,11 @@ export default function Dashboard() {
                 <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">
                   Percentages are calculated based on your {afterTaxIncome !== undefined ? 'after-tax' : 'gross'} income.
                 </p>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  <div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">One-time Cost</p>
-                    <p className="text-lg font-semibold dark:text-white">
-                      ${costAnalysis.oneTime.amount.toFixed(2)}
-                      <span className="text-sm text-gray-600 dark:text-gray-400 ml-2">
-                        ({costAnalysis.oneTime.percentage.toFixed(3)}% of yearly income)
-                      </span>
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Weekly Cost (yearly)</p>
-                    <p className="text-lg font-semibold dark:text-white">
-                      ${costAnalysis.weekly.amount.toFixed(2)}
-                      <span className="text-sm text-gray-600 dark:text-gray-400 ml-2">
-                        ({costAnalysis.weekly.percentage.toFixed(3)}% of yearly income)
-                      </span>
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Monthly Cost (yearly)</p>
-                    <p className="text-lg font-semibold dark:text-white">
-                      ${costAnalysis.monthly.amount.toFixed(2)}
-                      <span className="text-sm text-gray-600 dark:text-gray-400 ml-2">
-                        ({costAnalysis.monthly.percentage.toFixed(3)}% of yearly income)
-                      </span>
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Every 4 Months Cost (yearly)</p>
-                    <p className="text-lg font-semibold dark:text-white">
-                      ${costAnalysis.everyFourMonths.amount.toFixed(2)}
-                      <span className="text-sm text-gray-600 dark:text-gray-400 ml-2">
-                        ({costAnalysis.everyFourMonths.percentage.toFixed(3)}% of yearly income)
-                      </span>
-                    </p>
-                  </div>
-                </div>
+                <CostAnalysisDisplay
+                  frequency={frequency}
+                  costAnalysis={costAnalysis}
+                  afterTaxIncome={afterTaxIncome}
+                />
               </div>
             </div>
           )}
@@ -491,4 +410,3 @@ export default function Dashboard() {
     </div>
   );
 }
-

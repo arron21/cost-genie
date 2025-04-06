@@ -5,6 +5,8 @@ import { useAuth } from '../auth/AuthContext';
 import { getUserProfile, UserProfile } from '../../firebase';
 import { Link } from 'react-router-dom';
 import { calculateAfterTaxIncome } from '../history/taxMap';
+import CostAnalysisDisplay from '../history/CostAnalysisDisplay';
+import { calculateCost } from '../../utils/costUtils';
 
 interface CostRecord {
   id: string;
@@ -16,72 +18,6 @@ interface CostRecord {
   favorite?: boolean;
   need?: boolean;
   frequency: 'once' | 'daily' | 'weekly' | 'monthly' | 'yearly';
-}
-
-interface CostAnalysis {
-  oneTime: {
-    amount: number;
-    percentage: number;
-  };
-  weekly: {
-    amount: number;
-    percentage: number;
-  };
-  monthly: {
-    amount: number;
-    percentage: number;
-  };
-  everyFourMonths: {
-    amount: number;
-    percentage: number;
-  };
-  yearly: {
-    amount: number;
-    percentage: number;
-  };
-}
-
-// Update the function to optionally use afterTaxIncome parameter
-function calculateCost(amount: number, yearlySalary: number, afterTaxIncome?: number): CostAnalysis {
-  // Calculate costs for different frequencies
-  const oneTimeAmount = amount;
-  const weeklyAmount = amount * 52;  // 52 weeks in a year
-  const monthlyAmount = amount * 12; // 12 months in a year
-  const everyFourMonthsAmount = amount * 3; // 3 times per year (every 4 months)
-  const yearlyAmount = monthlyAmount; // Same as monthly amount * 12
-
-  // Use after-tax income for percentage calculations when available
-  const incomeForPercentage = typeof afterTaxIncome === 'number' ? afterTaxIncome : yearlySalary;
-
-  // Calculate percentages of income
-  const oneTimePercentage = (oneTimeAmount / incomeForPercentage) * 100;
-  const weeklyPercentage = (weeklyAmount / incomeForPercentage) * 100;
-  const monthlyPercentage = (monthlyAmount / incomeForPercentage) * 100;
-  const everyFourMonthsPercentage = (everyFourMonthsAmount / incomeForPercentage) * 100;
-  const yearlyPercentage = (yearlyAmount / incomeForPercentage) * 100;
-
-  return {
-    oneTime: {
-      amount: oneTimeAmount,
-      percentage: oneTimePercentage
-    },
-    weekly: {
-      amount: weeklyAmount,
-      percentage: weeklyPercentage
-    },
-    monthly: {
-      amount: monthlyAmount,
-      percentage: monthlyPercentage
-    },
-    everyFourMonths: {
-      amount: everyFourMonthsAmount,
-      percentage: everyFourMonthsPercentage
-    },
-    yearly: {
-      amount: yearlyAmount,
-      percentage: yearlyPercentage
-    }
-  };
 }
 
 const Needs: React.FC = () => {
@@ -359,54 +295,11 @@ const Needs: React.FC = () => {
                 </div>
                 
                 {isExpanded && costAnalysis && (
-                  <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
-                    <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                      Cost Analysis
-                      <span className="text-xs font-normal text-gray-500 dark:text-gray-400 ml-2">
-                        (% of {afterTaxIncome !== undefined ? 'after-tax' : 'gross'} income)
-                      </span>
-                    </h4>
-                    <div className="bg-gray-50 dark:bg-gray-700 p-3 rounded-lg">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        <div>
-                          <p className="text-xs text-gray-500 dark:text-gray-400">One-time Cost</p>
-                          <p className="text-sm font-semibold dark:text-white">
-                            ${costAnalysis.oneTime.amount.toFixed(2)}
-                            <span className="text-xs text-gray-600 dark:text-gray-400 ml-1">
-                              ({costAnalysis.oneTime.percentage.toFixed(3)}% of yearly income)
-                            </span>
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-xs text-gray-500 dark:text-gray-400">Weekly Cost (yearly)</p>
-                          <p className="text-sm font-semibold dark:text-white">
-                            ${costAnalysis.weekly.amount.toFixed(2)}
-                            <span className="text-xs text-gray-600 dark:text-gray-400 ml-1">
-                              ({costAnalysis.weekly.percentage.toFixed(3)}% of yearly income)
-                            </span>
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-xs text-gray-500 dark:text-gray-400">Monthly Cost (yearly)</p>
-                          <p className="text-sm font-semibold dark:text-white">
-                            ${costAnalysis.monthly.amount.toFixed(2)}
-                            <span className="text-xs text-gray-600 dark:text-gray-400 ml-1">
-                              ({costAnalysis.monthly.percentage.toFixed(3)}% of yearly income)
-                            </span>
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-xs text-gray-500 dark:text-gray-400">Every 4 Months Cost (yearly)</p>
-                          <p className="text-sm font-semibold dark:text-white">
-                            ${costAnalysis.everyFourMonths.amount.toFixed(2)}
-                            <span className="text-xs text-gray-600 dark:text-gray-400 ml-1">
-                              ({costAnalysis.everyFourMonths.percentage.toFixed(3)}% of yearly income)
-                            </span>
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                  <CostAnalysisDisplay
+                  frequency={cost.frequency}
+                    costAnalysis={costAnalysis}
+                    afterTaxIncome={afterTaxIncome}
+                  />
                 )}
               </div>
             );

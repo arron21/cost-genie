@@ -21,6 +21,7 @@ const Settings: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [newYearlySalary, setNewYearlySalary] = useState('');
 
   const states = getStateNames();
 
@@ -34,10 +35,11 @@ const Settings: React.FC = () => {
         const profile = await getUserProfile(currentUser.uid);
         setUserProfile(profile);
         
-        if (profile && profile.state) {
-          setSelectedState(profile.state);
+        if (profile) {
+          setSelectedState(profile.state || '');
+          setNewYearlySalary(profile.yearlySalary.toString()); // Initialize newYearlySalary
           
-          if (profile.yearlySalary) {
+          if (profile.state && profile.yearlySalary) {
             const afterTax = calculateAfterTaxIncome(profile.state, profile.yearlySalary);
             setAfterTaxIncome(afterTax);
           }
@@ -59,13 +61,18 @@ const Settings: React.FC = () => {
     loadUserProfile();
   }, [currentUser]);
   
-  // Update after-tax income when state changes
+  // Update after-tax income when state or salary changes
   useEffect(() => {
-    if (userProfile && selectedState && userProfile.yearlySalary) {
-      const afterTax = calculateAfterTaxIncome(selectedState, userProfile.yearlySalary);
-      setAfterTaxIncome(afterTax);
+    if (userProfile && selectedState && newYearlySalary) {
+      const salary = Number(newYearlySalary);
+      if (!isNaN(salary) && salary > 0) {
+        const afterTax = calculateAfterTaxIncome(selectedState, salary);
+        setAfterTaxIncome(afterTax);
+      } else {
+        setAfterTaxIncome(null);
+      }
     }
-  }, [selectedState, userProfile]);
+  }, [selectedState, userProfile, newYearlySalary]);
 
   const handleSettingsChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
@@ -103,10 +110,21 @@ const Settings: React.FC = () => {
       setSaveSuccess(false);
       setError(null);
       
-      // Update user state in Firebase
+      // Validate newYearlySalary
+      const salary = Number(newYearlySalary);
+      if (isNaN(salary) || salary <= 0) {
+        setError('Please enter a valid yearly salary.');
+        return;
+      }
+      
+      // Update user profile in Firebase
       await updateUserProfile(currentUser.uid, {
-        state: selectedState
+        state: selectedState,
+        yearlySalary: salary // Update yearly salary
       });
+      
+      // Update local userProfile state
+      setUserProfile(prev => ({ ...prev, yearlySalary: salary }));
       
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 3000);
@@ -224,9 +242,24 @@ const Settings: React.FC = () => {
       
       {/* Profile Update Section */}
       <div className="mb-8 p-5 bg-white rounded-lg shadow-sm dark:bg-gray-700">
-        <h3 className="text-xl font-semibold mb-4 dark:text-gray-300">Update Your State</h3>
+        <h3 className="text-xl font-semibold mb-4 dark:text-gray-300">Update Your Profile</h3>
         
         <form onSubmit={handleProfileSubmit}>
+          <div className="mb-4">
+            <label htmlFor="yearlySalary" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Yearly Salary
+            </label>
+            <input 
+              type="number" 
+              id="yearlySalary" 
+              name="yearlySalary" 
+              value={newYearlySalary} 
+              onChange={(e) => setNewYearlySalary(e.target.value)}
+              className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white"
+              required
+            />
+          </div>
+          
           <div className="mb-4">
             <label htmlFor="userState" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Your State
@@ -250,7 +283,7 @@ const Settings: React.FC = () => {
             className="mt-4 bg-blue-600 text-white py-2 px-4 rounded cursor-pointer text-base transition duration-300 hover:bg-blue-700 disabled:opacity-50"
             disabled={loading}
           >
-            {loading ? 'Saving...' : 'Save State Change'}
+            {loading ? 'Saving...' : 'Save Profile Changes'}
           </button>
         </form>
       </div>
