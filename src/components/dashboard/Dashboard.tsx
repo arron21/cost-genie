@@ -6,30 +6,7 @@ import { calculateAfterTaxIncome } from '../history/taxMap';
 import { query, collection, where, getDocs, DocumentData } from 'firebase/firestore';
 import FinancialRecommendations from '../recommendations/FinancialRecommendations';
 import CostAnalysisDisplay from '../history/CostAnalysisDisplay';
-import { calculateCost } from '../../utils/costUtils';
-
-interface CostAnalysis {
-  oneTime: {
-    amount: number;
-    percentage: number;
-  };
-  weekly: {
-    amount: number;
-    percentage: number;
-  };
-  monthly: {
-    amount: number;
-    percentage: number;
-  };
-  everyFourMonths: {
-    amount: number;
-    percentage: number;
-  };
-  yearly: {
-    amount: number;
-    percentage: number;
-  };
-}
+import { calculateCost, CostAnalysis } from '../../utils/costUtils';
 
 export default function Dashboard() {
   const { currentUser } = useAuth();

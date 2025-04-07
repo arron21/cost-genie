@@ -124,7 +124,10 @@ const Settings: React.FC = () => {
       });
       
       // Update local userProfile state
-      setUserProfile(prev => ({ ...prev, yearlySalary: salary }));
+      setUserProfile(prev => {
+        if (!prev) return null; // Handle case where prev is null
+        return { ...prev, yearlySalary: salary, userId: prev.userId };
+      });
       
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 3000);

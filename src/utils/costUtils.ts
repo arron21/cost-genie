@@ -1,4 +1,4 @@
-interface CostAnalysis {
+export interface CostAnalysis {
   oneTime: {
     amount: number;
     percentage: number;

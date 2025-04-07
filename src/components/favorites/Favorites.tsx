@@ -19,29 +19,6 @@ interface CostRecord {
   frequency: 'once' | 'daily' | 'weekly' | 'monthly' | 'yearly';
 }
 
-interface CostAnalysis {
-  oneTime: {
-    amount: number;
-    percentage: number;
-  };
-  weekly: {
-    amount: number;
-    percentage: number;
-  };
-  monthly: {
-    amount: number;
-    percentage: number;
-  };
-  everyFourMonths: {
-    amount: number;
-    percentage: number;
-  };
-  yearly: {
-    amount: number;
-    percentage: number;
-  };
-}
-
 const Favorites = () => {
   const [favorites, setFavorites] = useState<CostRecord[]>([]);
   const [loading, setLoading] = useState(true);
